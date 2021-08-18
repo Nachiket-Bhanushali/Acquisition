@@ -43,6 +43,7 @@ def integrate(x, data):
     """
     Integrate all waveforms in `data` with times `x`.
     """
+    
     a, b = get_window(x,data)
     # i = v/r
     # divide by 50 ohms to convert to a charge
@@ -81,6 +82,21 @@ if __name__ == '__main__':
             for channel in f:
                 if channel == 'settings':
                     continue
+                
+                # Baseline correction for sodium
+                if args.sodium:
+                    avg_noise = []
+                    for i in f[channel][:,np.where(x < x[0] + 10)[0]]:
+                        avg_noise.append(np.average(i))
+                    k = 0
+                    for i in f[channel]:
+                        i = np.array(i)
+                        if avg_noise[k] <= 0:
+                            i = i + avg_noise[k]
+                        else:
+                            i = i - avg_noise[k]
+                        k = k + 1
+                
                 charge[channel] = integrate(x,f[channel])
                 if args.sodium:
                     a, b = get_window(x,f[channel],left=10,right=100)
